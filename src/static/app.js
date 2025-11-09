@@ -59,8 +59,36 @@ document.addEventListener("DOMContentLoaded", () => {
             spanEmail.className = "participant-email";
             spanEmail.textContent = email;
 
+            const deleteIcon = document.createElement("span");
+            deleteIcon.className = "delete-icon";
+            deleteIcon.innerHTML = "×";
+            deleteIcon.title = "Remove participant";
+            deleteIcon.onclick = async () => {
+                try {
+                    const response = await fetch(
+                        `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(email)}`,
+                        { method: "POST" }
+                    );
+                    if (response.ok) {
+                        // Refresh the activities list
+                        fetchActivities();
+                        messageDiv.className = "success";
+                        messageDiv.textContent = "Successfully unregistered from the activity.";
+                    } else {
+                        const error = await response.text();
+                        messageDiv.className = "error";
+                        messageDiv.textContent = error || "Failed to unregister from the activity.";
+                    }
+                } catch (error) {
+                    console.error("Error unregistering:", error);
+                    messageDiv.className = "error";
+                    messageDiv.textContent = "Failed to unregister from the activity.";
+                }
+            };
+
             li.appendChild(avatar);
             li.appendChild(spanEmail);
+            li.appendChild(deleteIcon);
             ul.appendChild(li);
           });
           participantsContainer.appendChild(ul);
@@ -100,13 +128,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      const result = await response.json();
-
       if (response.ok) {
-        messageDiv.textContent = result.message;
+        // Refresh the activities list
+        fetchActivities();
         messageDiv.className = "success";
+        messageDiv.textContent = "Successfully registered for the activity.";
+        // Clear the form
         signupForm.reset();
       } else {
+        const result = await response.json();
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
       }
